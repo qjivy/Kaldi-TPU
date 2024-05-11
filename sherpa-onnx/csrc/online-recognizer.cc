@@ -113,7 +113,7 @@ std::string OnlineRecognizerConfig::ToString() const {
   return os.str();
 }
 
-OnlineRecognizer::OnlineRecognizer(const OnlineRecognizerConfig &config)
+OnlineRecognizer::OnlineRecognizer(const OnlineRecognizerConfig &config) //qj
     : impl_(OnlineRecognizerImpl::Create(config)) {}
 
 OnlineRecognizer::~OnlineRecognizer() = default;
@@ -132,7 +132,7 @@ bool OnlineRecognizer::IsReady(OnlineStream *s) const {
 }
 
 void OnlineRecognizer::DecodeStreams(OnlineStream **ss, int32_t n) const {
-  impl_->DecodeStreams(ss, n);
+  impl_->DecodeStreams(ss, n); //qj
 }
 
 OnlineRecognizerResult OnlineRecognizer::GetResult(OnlineStream *s) const {

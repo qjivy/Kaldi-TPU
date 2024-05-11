@@ -54,7 +54,7 @@ cmake \
   -DBUILD_ESPEAK_NG_EXE=OFF \
   -DBUILD_ESPEAK_NG_TESTS=OFF \
   -DCMAKE_INSTALL_PREFIX=./install \
-  -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_BUILD_TYPE=Debug \
   -DBUILD_SHARED_LIBS=$BUILD_SHARED_LIBS \
   -DSHERPA_ONNX_ENABLE_TESTS=OFF \
   -DSHERPA_ONNX_ENABLE_PYTHON=OFF \
@@ -66,7 +66,7 @@ cmake \
   -DCMAKE_TOOLCHAIN_FILE=../toolchains/riscv64-linux-gnu.toolchain.cmake \
   ..
 
-make VERBOSE=1 -j4
+make VERBOSE=1 -j1
 make install/strip
 
 # Enable it if only needed

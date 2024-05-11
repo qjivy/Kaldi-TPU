@@ -72,7 +72,7 @@ void OnlineTransducerGreedySearchDecoder::StripLeadingBlanks(
 }
 
 
-void OnlineTransducerGreedySearchDecoder::Decode(
+void OnlineTransducerGreedySearchDecoder::Decode( //qj
     Ort::Value encoder_out,
     std::vector<OnlineTransducerDecoderResult> *result) {
 
@@ -110,13 +110,13 @@ void OnlineTransducerGreedySearchDecoder::Decode(
     UseCachedDecoderOut(*result, &decoder_out);
   } else {
     Ort::Value decoder_input = model_->BuildDecoderInput(*result);
-    decoder_out = model_->RunDecoder(std::move(decoder_input));
+    decoder_out = model_->RunDecoder(std::move(decoder_input)); //qj
   }
 
   for (int32_t t = 0; t != num_frames; ++t) {
     Ort::Value cur_encoder_out =
         GetEncoderOutFrame(model_->Allocator(), &encoder_out, t);
-    Ort::Value logit = model_->RunJoiner(
+    Ort::Value logit = model_->RunJoiner( //qj
         std::move(cur_encoder_out), View(&decoder_out));
 
     float *p_logit = logit.GetTensorMutableData<float>();

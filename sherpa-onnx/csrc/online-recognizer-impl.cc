@@ -8,7 +8,7 @@
 
 namespace sherpa_onnx {
 
-std::unique_ptr<OnlineRecognizerImpl> OnlineRecognizerImpl::Create(
+std::unique_ptr<OnlineRecognizerImpl> OnlineRecognizerImpl::Create( //qj
     const OnlineRecognizerConfig &config) {
   if (!config.model_config.transducer.encoder.empty()) {
     return std::make_unique<OnlineRecognizerTransducerImpl>(config);

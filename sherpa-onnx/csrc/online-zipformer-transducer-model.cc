@@ -340,10 +340,46 @@ std::vector<Ort::Value> OnlineZipformerTransducerModel::GetEncoderInitStates() {
   return ans;
 }
 
+void dumpmem(const char *name, CVI_TENSOR * tensor){
+
+printf("[DUMP] name: %s type: %s count: %ld memsize: %ld\n",name, formatToStr(tensor->fmt),tensor->count,tensor->mem_size);
+//for(int i=0;i<tensor->count;i++)
+for(int i=0;i<tensor->mem_size;i+=16)
+//for(int i=0;i<128;i+=16)
+{
+printf("%p: ",&tensor->sys_mem[i]);
+printf(" 0x%02x%02x%02x%02x ",
+static_cast<int>(tensor->sys_mem[i+3]),
+static_cast<int>(tensor->sys_mem[i+2]),
+static_cast<int>(tensor->sys_mem[i+1]),
+static_cast<int>(tensor->sys_mem[i+0]));
+
+printf(" 0x%02x%02x%02x%02x ",
+static_cast<int>(tensor->sys_mem[i+7]),
+static_cast<int>(tensor->sys_mem[i+6]),
+static_cast<int>(tensor->sys_mem[i+5]),
+static_cast<int>(tensor->sys_mem[i+4]));
+
+printf(" 0x%02x%02x%02x%02x ",
+static_cast<int>(tensor->sys_mem[i+11]),
+static_cast<int>(tensor->sys_mem[i+10]),
+static_cast<int>(tensor->sys_mem[i+9]),
+static_cast<int>(tensor->sys_mem[i+8]));
+
+printf(" 0x%02x%02x%02x%02x \n",
+static_cast<int>(tensor->sys_mem[i+15]),
+static_cast<int>(tensor->sys_mem[i+14]),
+static_cast<int>(tensor->sys_mem[i+13]),
+static_cast<int>(tensor->sys_mem[i+12]));
+}
+printf("\n");
+}
+static int cntenc=0;
 std::pair<Ort::Value, std::vector<Ort::Value>>
 OnlineZipformerTransducerModel::RunEncoder(Ort::Value features,
                                            std::vector<Ort::Value> states,
                                            Ort::Value /* processed_frames */) {
+  cntenc++;					   
   std::vector<Ort::Value> encoder_inputs;
   encoder_inputs.reserve(1 + states.size());
 
@@ -358,11 +394,18 @@ OnlineZipformerTransducerModel::RunEncoder(Ort::Value features,
   CVI_NN_GetInputOutputTensors(encoder_sess_, &input_tensors, &input_num,
                                &output_tensors, &output_num);
   printf("[encoder] input num: %d, output num: %d\n", input_num, output_num);
+  
+  dumpmem("Encoder orig input: ",input_tensors);
 
   LoadOrtValuesToCviTensors(encoder_inputs, input_tensors, input_num);
 
+  dumpmem("Encoder loaded input: ",input_tensors);
+  
+
   CVI_NN_Forward(encoder_sess_, input_tensors, input_num, output_tensors,
                  output_num);
+  
+  dumpmem("Encoder output: ",output_tensors);
 
   std::vector<Ort::Value> next_states =
       GetOrtValuesFromCviTensors(output_tensors + 1, output_num - 1);
@@ -379,11 +422,16 @@ Ort::Value OnlineZipformerTransducerModel::RunDecoder(
   CVI_NN_GetInputOutputTensors(decoder_sess_, &input_tensors, &input_num,
                                &output_tensors, &output_num);
   printf("[Decoder] input num: %d, output num: %d\n", input_num, output_num);
+
+  dumpmem("Decoder orig input: ",input_tensors);
   std::vector<Ort::Value> temp = {};
   temp.push_back(std::move(decoder_input));
   LoadOrtValuesToCviTensors(temp, input_tensors, input_num);
+
+  dumpmem("Decoder loaded input: ",input_tensors);
   CVI_NN_Forward(decoder_sess_, input_tensors, input_num, output_tensors,
                  output_num);
+  dumpmem("Decoder output: ",output_tensors);
   return std::move(GetOrtValueFromCviTensor(output_tensors[0]));
 }
 
@@ -395,12 +443,17 @@ Ort::Value OnlineZipformerTransducerModel::RunJoiner(Ort::Value encoder_out,
   CVI_NN_GetInputOutputTensors(joiner_sess_, &input_tensors, &input_num,
                                &output_tensors, &output_num);
   printf("[Decoder] input num: %d, output num: %d\n", input_num, output_num);
+
+  dumpmem("Join orig input: ",input_tensors);
   std::vector<Ort::Value> temp = {};
   temp.push_back(std::move(encoder_out));
   temp.push_back(std::move(decoder_out));
   LoadOrtValuesToCviTensors(temp, input_tensors, input_num);
+
+  dumpmem("Join loaded input: ",input_tensors);
   CVI_NN_Forward(joiner_sess_, input_tensors, input_num, output_tensors,
                  output_num);
+  dumpmem("Join output: ",output_tensors);
   return std::move(GetOrtValueFromCviTensor(output_tensors[0]));
 }
 

@@ -73,7 +73,7 @@ class OnlineRecognizerTransducerImpl : public OnlineRecognizerImpl {
  public:
   explicit OnlineRecognizerTransducerImpl(const OnlineRecognizerConfig &config)
       : config_(config),
-        model_(OnlineTransducerModel::Create(config.model_config)),
+        model_(OnlineTransducerModel::Create(config.model_config)), //qj
         sym_(config.model_config.tokens),
         endpoint_(config_.endpoint_config) {
     if (sym_.contains("<unk>")) {
@@ -122,7 +122,7 @@ class OnlineRecognizerTransducerImpl : public OnlineRecognizerImpl {
            s->NumFramesReady();
   }
 
-  void DecodeStreams(OnlineStream **ss, int32_t n) const override {
+  void DecodeStreams(OnlineStream **ss, int32_t n) const override { //qj
     int32_t chunk_size = model_->ChunkSize();
     int32_t chunk_shift = model_->ChunkShift();
 
@@ -173,12 +173,12 @@ class OnlineRecognizerTransducerImpl : public OnlineRecognizerImpl {
     auto states = model_->StackStates(states_vec);
 
     auto pair = model_->RunEncoder(std::move(x), std::move(states),
-                                   std::move(processed_frames));
+                                   std::move(processed_frames)); //qj
 
     if (has_context_graph) {
       decoder_->Decode(std::move(pair.first), ss, &results);
     } else {
-      decoder_->Decode(std::move(pair.first), &results);
+      decoder_->Decode(std::move(pair.first), &results); //qj
     }
 
     std::vector<std::vector<Ort::Value>> next_states =
