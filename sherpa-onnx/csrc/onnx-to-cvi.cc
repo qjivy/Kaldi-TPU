@@ -50,18 +50,38 @@ Ort::Value GetOrtValueFromCviTensor(CVI_TENSOR &cvi_tensor) {
   return ort_value;
 }
 
+
+void memcheck(const char *name, const void *ptr,size_t n){
+printf("[CHECKMEMCPY] %s ptr: %p size: %ld\n",name,ptr,n);
+  const unsigned char *p = (const unsigned char *)ptr;
+    size_t i;
+
+    for (i = 0; i < n; i+=16) {
+printf("%p: ",&p[i]);
+printf(" 0x%02x%02x%02x%02x ", p[i+3], p[i+2], p[i+1], p[i+0]);
+printf(" 0x%02x%02x%02x%02x ", p[i+7], p[i+6], p[i+5], p[i+4]);
+printf(" 0x%02x%02x%02x%02x ", p[i+11], p[i+10], p[i+9], p[i+8]);
+printf(" 0x%02x%02x%02x%02x \n", p[i+15], p[i+14], p[i+13], p[i+12]);
+}
+}
+
 void ConvertOrtValueToCviTensor(Ort::Value &ort_value, CVI_TENSOR &cvi_tensor) {
   // assert ort_value中数据的数量和cvi_tensor的数据的数量一致
   TPU_LOG_INFO("ort_value count: %ld, cvi_tensor count: %ld\n", ort_value.GetTensorTypeAndShapeInfo().GetElementCount(), cvi_tensor.count);
   assert(cvi_tensor.count == ort_value.GetTensorTypeAndShapeInfo().GetElementCount());
   auto type = ort_value.GetTensorTypeAndShapeInfo().GetElementType();
   if(type == ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 && cvi_tensor.fmt == CVI_FMT_FP32) {
+    printf("in ConvertOrtValueToCviTensor copyI64ToFp32\n");
     copyI64ToFp32((int64_t*)(ort_value.GetTensorMutableRawData()), (float *)CVI_NN_TensorPtr(&cvi_tensor), cvi_tensor.count);
   } else if(type == ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64 && cvi_tensor.fmt == CVI_FMT_UINT16) {
+    printf("in ConvertOrtValueToCviTensor copyI64ToU16\n");
     copyI64ToU16((int64_t*)(ort_value.GetTensorMutableRawData()), (uint16_t *)CVI_NN_TensorPtr(&cvi_tensor), cvi_tensor.count);
   } else {
+    printf("in ConvertOrtValueToCviTensor memcpy\n");
     if (fmt_size_map.at(cvi_tensor.fmt) == ortvalue_size_map.at(type)) {
       memcpy(CVI_NN_TensorPtr(&cvi_tensor), ort_value.GetTensorMutableRawData(), cvi_tensor.mem_size);
+      memcheck("src: ",ort_value.GetTensorMutableRawData(),cvi_tensor.mem_size);
+      memcheck("dst: ",CVI_NN_TensorPtr(&cvi_tensor),cvi_tensor.mem_size);
     } else {
       TPU_LOG_INFO("ort_value element size: %d, cvi_tensor element size: %ld\n", ortvalue_size_map.at(type), cvi_tensor.mem_size);
       throw std::runtime_error("Unsupported data type for conversion.");

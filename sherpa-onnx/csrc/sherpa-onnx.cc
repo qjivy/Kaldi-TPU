@@ -105,10 +105,10 @@ for a list of pre-trained models to download.
     int32_t sampling_rate = -1;
 
     bool is_ok = false;
-    std::cout<<"QQ0 start ReadWave"<<std::endl;
+    std::cout<<"QDEBUG0 start ReadWave"<<std::endl;
     const std::vector<float> samples =
         sherpa_onnx::ReadWave(wav_filename, &sampling_rate, &is_ok);
-    std::cout<<"QQ1 end ReadWave"<<std::endl;
+    std::cout<<"QDEBUG1 end ReadWave"<<std::endl;
 
     if (!is_ok) {
       fprintf(stderr, "Failed to read %s\n", wav_filename.c_str());
@@ -116,23 +116,23 @@ for a list of pre-trained models to download.
     }
 
     const float duration = samples.size() / static_cast<float>(sampling_rate);
-    std::cout<<"QQ2 duration: "<<duration<<std::endl;
+    std::cout<<"QDEBUG2 duration: "<<duration<<std::endl;
 
     auto s = recognizer.CreateStream();
-    std::cout<<"QQ3 end CreateStream "<<std::endl;
+    std::cout<<"QDEBUG3 end CreateStream "<<std::endl;
     s->AcceptWaveform(sampling_rate, samples.data(), samples.size());
 
-    std::cout<<"QQ4 end AcceptWaveform "<<std::endl;
+    std::cout<<"QDEBUG4 end AcceptWaveform "<<std::endl;
 
     std::vector<float> tail_paddings(static_cast<int>(0.8 * sampling_rate));
     // Note: We can call AcceptWaveform() multiple times.
     s->AcceptWaveform(sampling_rate, tail_paddings.data(),
                       tail_paddings.size());
-    std::cout<<"QQ5 end AcceptWaveform tail"<<std::endl;
+    std::cout<<"QDEBUG5 end AcceptWaveform tail"<<std::endl;
 
     // Call InputFinished() to indicate that no audio samples are available
     s->InputFinished();
-    std::cout<<"QQ6 end InputFinished"<<std::endl;
+    std::cout<<"QDEBUG6 end InputFinished"<<std::endl;
     ss.push_back({std::move(s), duration, 0});
   }
 
@@ -156,10 +156,10 @@ for a list of pre-trained models to download.
     if (ready_streams.empty()) {
       break;
     }
-  std::cout<<"QQ0 begin recognizer.DecodeStreams "<<std::endl;
+  std::cout<<"QDEBUG0 begin recognizer.DecodeStreams "<<std::endl;
     recognizer.DecodeStreams(ready_streams.data(), ready_streams.size());
     break; //qjqj: here rm
-  std::cout<<"QQ1 end recognizer.DecodeStreams "<<std::endl;
+  std::cout<<"QDEBUG1 end recognizer.DecodeStreams "<<std::endl;
   }
 
   std::ostringstream os;
@@ -173,11 +173,11 @@ for a list of pre-trained models to download.
     const auto r = recognizer.GetResult(s.online_stream.get());
     os << r.text << "\n";
     os << r.AsJsonString() << "\n\n";
-    std::cout<<"QQ7 end"<<std::endl;
+    std::cout<<"QDEBUG7 end"<<std::endl;
   }
 
   std::cerr << os.str();
-    std::cout<<"QQ8 end"<<std::endl;
+    std::cout<<"QDEBUG8 end"<<std::endl;
 
   return 0;
 }
