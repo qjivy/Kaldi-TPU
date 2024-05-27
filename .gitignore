@@ -1,6 +1,5 @@
 build
 *.zip
-*.tgz
 *.sw?
 *.bmodel
 *.onnx

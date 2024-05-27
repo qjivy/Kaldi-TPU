@@ -1,0 +1,6 @@
+1. command line to generate join-18 input:
+
+python3 gennpz.py join18.allinput.txt join18.input.npz
+
+2. to dump a npz file
+python3 dumpnpz.py foo.npz
