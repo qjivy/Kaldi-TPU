@@ -65,18 +65,21 @@ std::unique_ptr<OnlineTransducerModel> OnlineTransducerModel::Create(
   return std::make_unique<OnlineZipformerTransducerModel>(config);
 }
 
+static int cntBDI=0; 
 Ort::Value OnlineTransducerModel::BuildDecoderInput(
     const std::vector<OnlineTransducerDecoderResult> &results) {
   int32_t batch_size = static_cast<int32_t>(results.size());
   int32_t context_size = ContextSize();
+  printf("BuildDecoderInput[%d]: batch_size:%d context_size:%d\n",cntBDI++,batch_size,context_size);
   std::array<int64_t, 2> shape{batch_size, context_size};
   Ort::Value decoder_input = Ort::Value::CreateTensor<int64_t>(
       Allocator(), shape.data(), shape.size());
   int64_t *p = decoder_input.GetTensorMutableData<int64_t>();
-
+  int iter=0;
   for (const auto &r : results) {
     const int64_t *begin = r.tokens.data() + r.tokens.size() - context_size;
     const int64_t *end = r.tokens.data() + r.tokens.size();
+    printf("\tBDI iter[%d] begin: %p end: %p\n",iter++,begin,end);
     std::copy(begin, end, p);
     p += context_size;
   }

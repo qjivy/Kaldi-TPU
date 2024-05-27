@@ -55,7 +55,9 @@ OnlineTransducerGreedySearchDecoder::GetEmptyResult() const {
   int32_t context_size = model_->ContextSize();
   int32_t blank_id = 0;  // always 0
   OnlineTransducerDecoderResult r;
-  r.tokens.resize(context_size, -1);
+  //r.tokens.resize(context_size, -1);
+  //r.tokens.resize(context_size, 0);
+  r.tokens.resize(context_size, 6253);
   r.tokens.back() = blank_id;
 
   return r;
@@ -71,14 +73,20 @@ void OnlineTransducerGreedySearchDecoder::StripLeadingBlanks(
   r->tokens = std::vector<int64_t>(start, end);
 }
 
-
+static int Decodecnt=0;
 void OnlineTransducerGreedySearchDecoder::Decode(
     Ort::Value encoder_out,
     std::vector<OnlineTransducerDecoderResult> *result) {
-
   std::vector<int64_t> encoder_out_shape =
       encoder_out.GetTensorTypeAndShapeInfo().GetShape();
-
+ //qj
+ printf("Decode[%d]: encoder_out elemcnt: %ld\n",Decodecnt++,encoder_out.GetTensorTypeAndShapeInfo().GetElementCount(),encoder_out_shape.size());
+    for(int i=0;i<encoder_out_shape.size();i++)
+    {
+    printf("enc_out dim[%d] count:%ld\n",i,encoder_out_shape[i]);
+    // 1 8 512 1 
+    }
+    printf("result size:%ld\n",result->size());
   if (encoder_out_shape[0] != result->size()) {
     SHERPA_ONNX_LOGE(
         "Size mismatch! encoder_out.size(0) %d, result.size(0): %d",
@@ -93,14 +101,18 @@ void OnlineTransducerGreedySearchDecoder::Decode(
 
   Ort::Value decoder_out{nullptr};
   bool is_batch_decoder_out_cached = true;
+  int countresult=0;
   for (const auto &r : *result) {
+    printf("DD1: %d\n",countresult++);
     if (!r.decoder_out) {
+      printf("DD2 set is_batch_decoder_out_cached false\n");
       is_batch_decoder_out_cached = false;
       break;
     }
   }
-
+  printf("DD3[%d]: is_batch_decoder_out_cached(T/F): %d\n",Decodecnt, is_batch_decoder_out_cached);
   if (is_batch_decoder_out_cached) {
+    printf("is_batch_decoder_out_cached T\n");
     auto &r = result->front();
     std::vector<int64_t> decoder_out_shape =
         r.decoder_out.GetTensorTypeAndShapeInfo().GetShape();
@@ -109,11 +121,28 @@ void OnlineTransducerGreedySearchDecoder::Decode(
         decoder_out_shape.data(), decoder_out_shape.size());
     UseCachedDecoderOut(*result, &decoder_out);
   } else {
+    printf("is_batch_decoder_out_cached F\n");
     Ort::Value decoder_input = model_->BuildDecoderInput(*result);
+   {//qj
+  	std::vector<int64_t> decoder_input_shape =
+      	decoder_input.GetTensorTypeAndShapeInfo().GetShape();
+ 	printf("Decode: decoder_input elemcnt: %ld\n",decoder_input.GetTensorTypeAndShapeInfo().GetElementCount(),decoder_input_shape.size());
+    	for(int i=0;i<decoder_input_shape.size();i++) {
+    		printf("dec_in dim[%d] count:%d\n",i,decoder_input_shape[i]);
+    	}
+    }
     decoder_out = model_->RunDecoder(std::move(decoder_input));
+    {//qj
+      std::vector<int64_t> decoder_out_shape =
+      decoder_out.GetTensorTypeAndShapeInfo().GetShape();
+      printf("Decode: decoder_out elemcnt: %ld\n",decoder_out.GetTensorTypeAndShapeInfo().GetElementCount(),decoder_out_shape.size());
+      for(int i=0;i<decoder_out_shape.size();i++) {
+    	printf("dec_out dim[%d] count:%d\n",i,decoder_out_shape[i]);
+      }
+    }
   }
-
   for (int32_t t = 0; t != num_frames; ++t) {
+    printf("Into frames iter t:%d, to run Joiner\n",t);
     Ort::Value cur_encoder_out =
         GetEncoderOutFrame(model_->Allocator(), &encoder_out, t);
     Ort::Value logit = model_->RunJoiner(
@@ -155,6 +184,7 @@ void OnlineTransducerGreedySearchDecoder::Decode(
       }
     }
     if (emitted) {
+      printf("\temitted: BuildDecoderInput  and RunDecoder again\n");
       Ort::Value decoder_input = model_->BuildDecoderInput(*result);
       decoder_out = model_->RunDecoder(std::move(decoder_input));
     }
