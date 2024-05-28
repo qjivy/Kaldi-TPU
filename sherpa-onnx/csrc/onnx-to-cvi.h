@@ -37,6 +37,8 @@ void ConvertOrtValueToCviTensor(Ort::Value& ort_value, CVI_TENSOR& cvi_tensor);
 
 void LoadOrtValuesToCviTensors(std::vector<Ort::Value> &ort_value_list, CVI_TENSOR* target_cvi_tensors, const int &num);
 
+void DUMPCviTensors(CVI_TENSOR* target_cvi_tensors, const int &num);
+
 std::vector<Ort::Value> GetOrtValuesFromCviTensors(CVI_TENSOR* cvi_tensors, const int num);
 
 #endif

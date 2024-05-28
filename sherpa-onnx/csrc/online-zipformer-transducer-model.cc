@@ -12,7 +12,7 @@
 #include <string>
 #include <utility>
 #include <vector>
-
+#include <iostream>
 #include "cvi-utils.h"
 #include "cviruntime.h"
 #include "onnx-to-cvi.h"
@@ -439,10 +439,43 @@ Ort::Value OnlineZipformerTransducerModel::RunJoiner(Ort::Value encoder_out,
   temp.push_back(std::move(encoder_out));
   temp.push_back(std::move(decoder_out));
   LoadOrtValuesToCviTensors(temp, input_tensors, input_num);
+  DUMPCviTensors(input_tensors,input_num);
   dumpmem("DEBUG Join loaded input: ",cntjoin, input_tensors);
+  {
+  CVI_TENSOR * enc_out =  &input_tensors[0];
+  CVI_TENSOR * dec_out =  &input_tensors[1];
+  printf("DEBUG Join:%d input[0]: %s[%d:%d:%d:%d] intput[1]: %s[%d:%d:%d:%d]\n",cntjoin,
+  enc_out->name,enc_out->shape.dim[0],enc_out->shape.dim[1],enc_out->shape.dim[2],enc_out->shape.dim[3],
+  dec_out->name,dec_out->shape.dim[0],dec_out->shape.dim[1],dec_out->shape.dim[2],dec_out->shape.dim[3]);
+  auto encptr=(float *)CVI_NN_TensorPtr(enc_out);
+  auto decptr=(float *)CVI_NN_TensorPtr(dec_out);
+
+  for(int i=0;i<enc_out->shape.dim[1];i++)
+  {
+     std::cout<<"IN1DEBUG Join-input1["<<i<<"]: "<<encptr[i]<<std::endl;
+  }
+  std::cout<<std::endl;
+  for(int i=0;i<dec_out->shape.dim[1];i++)
+  {
+     std::cout<<"IN2DEBUG Join-input2["<<i<<"]: "<<decptr[i]<<std::endl;
+  }
+  }
   CVI_NN_Forward(joiner_sess_, input_tensors, input_num, output_tensors,
                  output_num);
   dumpmem("DEBUG Join output: ",cntjoin, output_tensors);
+  {
+  CVI_TENSOR * out =  &output_tensors[0];
+  printf("DEBUG Join:%d out: %s[%d:%d:%d:%d]\n", 
+  cntjoin,
+  out->name,out->shape.dim[0],out->shape.dim[1],out->shape.dim[2],out->shape.dim[3]);
+  auto outptr=(float *)CVI_NN_TensorPtr(out);
+
+  for(int i=0;i<out->shape.dim[1];i++)
+  {
+     std::cout<<"ODEBUG Join-output["<<i<<"]: "<<outptr[i]<<std::endl;
+  }
+  std::cout<<std::endl;
+  }
   return std::move(GetOrtValueFromCviTensor(output_tensors[0]));
 }
 
